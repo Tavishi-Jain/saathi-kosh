@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  LOAN_DISBURSEMENT
+  LOAN_REPAYMENT
+  ADJUSTMENT
+}
+
+enum CashDirection {
+  IN
+  OUT
+}
+
+enum LoanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DISBURSED
+}
+
+model Member {
+  id             String            @id @default(cuid())
+  name           String            @unique
+  role           String            @default("सदस्य")
+  authorized     Boolean           @default(false)
+  nextInstallmentPaise Int?
+  nextInstallmentAt    DateTime?
+  transactions   TransactionEntry[]
+  loans          LoanProposal[]
+  votes          Vote[]
+  loanApprovals  LoanApproval[]
+  callsInitiated CallInvitation[]  @relation("CallInitiator")
+  callsReceived  CallInvitation[]  @relation("CallRecipient")
+}
+
+model TransactionEntry {
+  id                  String          @id @default(cuid())
+  idempotencyKey      String          @unique
+  createdAt           DateTime        @default(now())
+  occurredAt          DateTime
+  memberId            String
+  member              Member          @relation(fields: [memberId], references: [id])
+  type                TransactionType
+  amountPaise         Int
+  adjustmentDirection CashDirection?
+  description         String
+  source              String          @default("manual")
+  actor               String          @default("Treasurer")
+  confirmationStatus  String          @default("confirmed")
+  bankReference       String?
+  correctionOfId      String?
+  correctionOf        TransactionEntry? @relation("Corrections", fields: [correctionOfId], references: [id])
+  corrections         TransactionEntry[] @relation("Corrections")
+}
+
+model BankRecord {
+  id            String   @id @default(cuid())
+  externalId    String   @unique
+  occurredAt    DateTime
+  direction     CashDirection
+  amountPaise   Int
+  description   String
+  reference     String?
+  source        String   @default("SIMULATED BANK DATA")
+}
+
+model LoanProposal {
+  id            String     @id @default(cuid())
+  idempotencyKey String    @unique
+  createdAt     DateTime   @default(now())
+  memberId      String
+  member        Member     @relation(fields: [memberId], references: [id])
+  amountPaise   Int
+  purpose       String
+  emergency     Boolean    @default(false)
+  status        LoanStatus @default(PENDING)
+  votes         Vote[]
+  approvals     LoanApproval[]
+}
+
+model Vote {
+  id          String       @id @default(cuid())
+  createdAt   DateTime     @default(now())
+  proposalId  String
+  proposal    LoanProposal @relation(fields: [proposalId], references: [id])
+  memberId    String
+  member      Member       @relation(fields: [memberId], references: [id])
+  choice      String
+
+  @@unique([proposalId, memberId])
+}
+
+model LoanApproval {
+  id          String       @id @default(cuid())
+  proposalId  String
+  proposal    LoanProposal @relation(fields: [proposalId], references: [id])
+  memberId    String
+  member      Member       @relation(fields: [memberId], references: [id])
+  createdAt   DateTime     @default(now())
+
+  @@unique([proposalId, memberId])
+}
+
+model CallInvitation {
+  id               String   @id @default(cuid())
+  groupKey         String
+  roomName         String   @unique
+  callerId         String
+  caller           Member   @relation("CallInitiator", fields: [callerId], references: [id])
+  calleeId         String
+  callee           Member   @relation("CallRecipient", fields: [calleeId], references: [id])
+  status           String   @default("RINGING")
+  callerConnectedAt DateTime?
+  calleeConnectedAt DateTime?
+  callerAudioReadyAt DateTime?
+  calleeAudioReadyAt DateTime?
+  acceptedAt        DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  endedAt          DateTime?
+
+  @@index([groupKey, status])
+  @@index([callerId, status])
+  @@index([calleeId, status])
+}
+
+model GroupSettings {
+  id                    String   @id @default("group")
+  openingBalancePaise   Int      @default(4500000)
+  approvalLimitPaise    Int      @default(500000)
+  quorumCount           Int      @default(7)
+  approvalPercent       Int      @default(60)
+  emergencyVoting       Boolean  @default(false)
+  emergencyQuorumCount  Int      @default(4)
+  expectedContributionPaise Int  @default(50000)
+  updatedAt             DateTime @updatedAt
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  sequence    Int      @unique
+  occurredAt  DateTime @default(now())
+  actor       String
+  eventType   String
+  entityRef   String
+  payload     String
+  previousHash String
+  eventHash   String
+}

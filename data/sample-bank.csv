@@ -1,0 +1,6 @@
+external_id,days_ago,direction,amount_paise,description,reference
+BANK-1001,2,IN,50000,Sakhi SHG deposit,BANK-1001
+BANK-1002,1,IN,100000,Loan instalment,BANK-1002
+BANK-1003,0,IN,50000,Unrecorded bank credit,BANK-1003
+BANK-1004,8,IN,50000,Similar amount different date,BANK-1004
+BANK-1001-COPY,2,IN,50000,Possible duplicate credit,BANK-1001
