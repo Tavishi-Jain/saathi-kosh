@@ -1,82 +1,73 @@
 # Saathi Kosh
 
-A Hindi-first, mobile-friendly ledger and decision assistant demo for the fictional **Sakhi Self-Help Group**. The existing Vite app in the parent directory is left untouched; this standalone Next.js application lives in `saathi-kosh/`.
+**A voice-first digital ledger concept for women-led self-help groups.**
 
-All members, transactions, bank records, and loan requests are **simulated**. This project does not connect to a real bank, transfer money, replace official SHG records, or provide financial/legal advice. The demo role selector is not authentication.
+Saathi Kosh is a mobile-friendly prototype exploring how members of a self-help group can record contributions, understand group finances, and participate in loan decisions using familiar Hindi or English. It is built around a fictional group, **Sakhi Self-Help Group**, and designed as a transparent, review-before-save experience.
 
-## Requirements and setup
+> **Prototype notice:** All people, balances, transactions, bank records, and loan requests are simulated. Saathi Kosh does not connect to a real bank, transfer money, replace official SHG records, or provide financial or legal advice. The demo member selector is not authentication.
+
+## What it demonstrates
+
+- **Hindi-first, bilingual interface** with an English language option and responsive layouts.
+- **Voice-assisted ledger entry** with Hindi/Hinglish text parsing, editable drafts, and explicit confirmation before saving.
+- **Deterministic group ledger** with integer-paise amounts and calculated balances.
+- **Loan proposals and group voting**, including configurable rules and a simulated, sequential spoken approval-call flow.
+- **Weekly summaries, simulated bank reconciliation, and a tamper-evident SHA-256 audit trail.**
+- Optional **ElevenLabs** speech services and **LiveKit** browser-to-browser audio calls; credentials stay server-side.
+
+## Built with
+
+Next.js App Router, React, TypeScript, Tailwind CSS, Prisma, SQLite, Zod, Vitest, and the browser Web Speech API.
+
+## Run locally
 
 Use Node.js 20.19+ or 22.12+ and npm.
 
 ```powershell
-cd saathi-kosh
-npm install
+npm ci
 Copy-Item .env.example .env
 npm run db:push
 npm run db:seed
 npm run dev
 ```
 
-Open <http://localhost:3000>. The demo database is SQLite at `prisma/dev.db`. The seed command **resets** the demo tables and creates 12 fictional members, the ₹45,000 opening balance, sample deposits and repayments, matching and unmatched simulated bank rows, and a pending ₹15,000 loan proposal.
+Open <http://localhost:3000>. The seed command **resets** the demo tables and creates 12 fictional members, a ₹45,000 opening balance, sample deposits and repayments, simulated bank rows, and a pending ₹15,000 loan proposal. Re-run `npm run db:seed` to restore the sample dataset. For production mode, run `npm run build` followed by `npm start`.
 
-For repeatable sample data, run `npm run db:seed` again. To run the app in production mode, use `npm run build` followed by `npm start`.
+## Demo workflows
 
-## Focused presentation walkthrough
+### Voice-assisted ledger entry
 
-The main presentation navigation focuses on five destinations: overview, voice entry, ledger, loan approvals, and weekly review. Reconciliation, audit history, and settings remain available as supporting features.
+Go to **Voice entry**, speak or type a sentence such as `Aaj Sunita ne paanch sau rupaye jama kiye`, review the recognized text and parsed transaction, and explicitly choose **Confirm and save to ledger**. Recognition depends on browser support and microphone permission; manual text entry remains available. Recognition does not save an entry automatically.
+
+### Emergency loan request and group vote
+
+In **Loans & voting**, enter or dictate a request, review the parsed member, amount, purpose, and emergency flag, then confirm the proposal. For an eligible emergency request, the app can run a sequential in-app simulation: browser speech reads the request, then listens for a spoken **Yes/No** or **Haan/Nahin** vote. Votes are saved through the group-voting API, and the configured quorum and approval percentage determine the result.
+
+This workflow is a **single-session role-play**, not outbound calling: no phone numbers are dialed, other devices are not rung, and no AI phone agent is connected. The presenter acts as each demo member. A clear on-screen manual vote option is available if speech recognition is unsupported or unavailable.
+
+### Live demo call between two browsers (optional)
+
+The member directory can demonstrate browser-to-browser audio using LiveKit when configured. Both browsers must have the app open and use the same app origin and database. This is not a cellular call and cannot ring a closed or locked device. See the optional setup below.
+
+## Presentation walkthrough
+
+The main navigation highlights overview, voice entry, ledger, loan approvals, and weekly review. Reconciliation, audit history, and settings are supporting features.
 
 ### Before presenting
 
-- Keep the app server and Cloudflare tunnel running. Open the same current HTTPS tunnel URL in both browsers; do not use `localhost` on the phone.
-- On your laptop, set **Calling as** to **Asha**. On your friend's browser, set it to **Sunita**. The demo identity selector is not sign-in.
-- Confirm the LiveKit service is configured and both browsers can request microphone access. Use a current Chrome or Edge browser on the laptop and grant microphone permission for live browser speech recognition. Recognition availability, Hindi/Hinglish accuracy, network behavior, and audio handling depend on the browser; it may use a browser-provided online service. The app does not upload this live recognition audio to ElevenLabs. If the browser lacks live recognition, type the same sentence instead. The browser API does not require an ElevenLabs key, but do not promise that speech recognition is universally offline or guaranteed free under every browser's terms.
-- Use only fictional demo details. The group and ledger data are simulated.
+- Use only fictional demo details.
+- Grant microphone permission in a supported browser if demonstrating speech recognition or LiveKit calls.
+- Live browser speech recognition may use a browser-provided online service; availability, accuracy, and terms depend on the browser. It is separate from the optional ElevenLabs provider.
+- A LiveKit call requires valid project credentials and two open browsers. See the optional LiveKit setup below.
 
-### Presenter script (about three minutes)
+### Short story
 
-**1. Introduce the problem on Overview**
+1. On **Overview**, introduce the problem of keeping a clear shared record of group savings. Point out that the group and balance are simulated.
+2. Demonstrate an in-app browser call between two demo identities, if LiveKit is configured. Explain that it is browser-to-browser audio, not a phone-number call.
+3. On **Voice entry**, dictate or type `Aaj Sunita ne paanch sau rupaye jama kiye`. Review and correct the draft, then explicitly confirm it.
+4. On **Ledger**, show the saved ₹500 entry and calculated balance. On **Weekly review**, show the summary derived from ledger entries.
 
-Say: “In a self-help group, savings are often recorded after a meeting, and members may not know whether their contribution was written down correctly. Saathi Kosh is a shared, voice-first group ledger: members can talk to one another, record a contribution in everyday Hindi or Hinglish, review the amount, and only then save it.”
-
-Point to the group balance and the simulated-data notice. Say: “This is a demo group with fictional data, not a real bank account.”
-
-**2. Demonstrate a member-to-member call**
-
-Have your friend, as Sunita, tap **Call** beside Asha on their browser. On your laptop, accept the incoming call as Asha and allow microphone access; Sunita allows it on their device too. Wait for **Connected** on both screens, then say:
-
-- **Sunita:** “Namaste Asha, aaj group ki meeting mein meri paanch sau rupaye ki bachat jama hui hai. Kya tum ise bahi mein darj kar sakti ho?”
-- **Asha:** “Haan Sunita. Main pehle entry dekhungi, phir confirm karke bahi mein jodungi.”
-
-Say to the audience: “The call is live between the two open app browsers. It is not dialing a mobile number.”
-
-Hang up before switching screens. A call in progress locks the demo identity selector.
-
-**3. Show voice-first entry with explicit review**
-
-On Asha's laptop, open **Voice entry** and prepare to say this exact phrase: `Aaj Sunita ne paanch sau rupaye jama kiye.`
-
-- Tap **Start speaking** and say: `Aaj Sunita ne paanch sau rupaye jama kiye.` The browser shows recognized words live in the text box. Tap the microphone button again to stop, then choose **Review the draft**. If live recognition is unavailable or inaccurate, edit the text or type the sentence manually. This browser-based live speech path is separate from the optional ElevenLabs file-transcription provider.
-
-Read the proposed row aloud: “Sunita · savings deposit · ₹500.” Point out that it is still a draft and has not changed the ledger. Correct the member or amount if needed, then explicitly click **Confirm and save to ledger**. Live transcription never writes to the ledger automatically.
-
-**4. Prove it is recorded and explain the result**
-
-Open **Ledger** and point to the new Sunita ₹500 deposit and the updated calculated balance. Say: “The app parsed the amount into paise, checked the member and entry, and saved only after I confirmed it. The balance is recalculated from ledger entries.”
-
-Open **Weekly review** and point out that the totals come from the same ledger. Finish with: “The core idea is simple: a member speaks naturally, another member can verify the draft, and the group keeps a shared, understandable record.”
-
-If there is time for questions, mention that the other areas—loan voting, bank reconciliation, audit history, and configurable rules—are supporting prototype features, not part of this short story. Bank data remains simulated.
-
-### Emergency loan request and approval-call demo
-
-The **Loans & voting** screen includes an in-app role-play of an emergency loan workflow. The live mic button uses the browser's speech-recognition API; this path does not send a recorded audio file to ElevenLabs.
-
-1. In Chrome or Edge, set the demo role to **Sunita**, select **Loans & voting**, and click **Speak loan request live**. Say, for example: `Sunita ko emergency mein bees hazaar rupaye ka loan chahiye, ilaaj ke liye.` Live speech recognition is browser-dependent; type the same request if it is unavailable.
-2. Stop speaking, choose **Understand voice / text**, and check the parsed member, amount, purpose, and emergency flag. Explicitly submit the reviewed proposal; the app saves it to the loan proposal records.
-3. For an emergency proposal above the no-vote approval limit, the app automatically opens its sequential in-app call simulation. Browser speech synthesis reads the request to each eligible member, then automatically starts microphone recognition when the prompt finishes. Say **“Yes” / “No”** or **“Haan” / “Nahin”**; the live transcript is shown, unclear responses are retried, and only a clear answer is submitted as that member's vote. Browser speech recognition needs microphone permission and depends on browser support; grant microphone access if prompted. A **Listen again** control retries voice capture, and visible **हाँ/नहीं** buttons are provided as a fallback if the browser or microphone cannot recognize speech. Votes are persisted through the existing group-vote API, with quorum and approval percentage still enforced by the server.
-4. When the configured quorum is reached, the app announces the resulting approved/not-approved status to the requesting member. If everyone has responded without reaching quorum, it remains pending; the demo does not invent a decision.
-
-This does **not** place cellular calls, dial phone numbers, ring other devices, or connect an ElevenLabs agent. It simulates the bot's spoken prompts and return notification in one app session, while recording member votes in the demo database. The demo member selector is not authentication, so the presenter is explicitly acting as each member. No funds are transferred. Emergency proposals only use the reduced quorum if the group has enabled that setting; otherwise the regular quorum applies.
+The app can also demonstrate the emergency-loan voting flow described above. Loan voting, reconciliation, audit history, and configurable rules are prototype features; bank evidence and all financial data remain simulated.
 
 ## Voice provider (optional)
 
@@ -94,8 +85,11 @@ Set `VOICE_MODE=elevenlabs`, `ELEVENLABS_API_KEY`, and `ELEVENLABS_VOICE_ID` in 
 
 The member directory supports live browser-to-browser audio calls using LiveKit's official [`livekit-client`](https://docs.livekit.io/intro/basics/connect/) and [`livekit-server-sdk`](https://docs.livekit.io/frontends/reference/tokens-grants/) packages. Call invitations/signaling are stored in the existing SQLite database and polled while the app is open; LiveKit carries the live audio. There is no phone-number calling, AI agent, recording, or paid telephony integration.
 
+<details>
+<summary>Configure LiveKit and test a two-browser call</summary>
+
 1. In the LiveKit Cloud project dashboard, copy its **WebSocket URL**, **API key**, and **API secret**.
-2. Add these server-side values to `saathi-kosh/.env` (the names are case-sensitive):
+2. Add these server-side values to the root `.env` file (the names are case-sensitive):
 
    ```dotenv
    LIVEKIT_URL="wss://your-project.livekit.cloud"
@@ -143,6 +137,8 @@ The invitation screen appears only while the recipient has the app open and poll
 - [ ] Confirm a second concurrent call involving either busy member is rejected.
 - [ ] Disconnect one browser/network and confirm the other side sees the call end.
 - [ ] Confirm a wrong LiveKit URL/key/secret reports a connection failure without exposing the API secret in browser output.
+
+</details>
 
 ## Data, privacy, and limitations
 
