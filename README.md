@@ -143,7 +143,7 @@ The invitation screen appears only while the recipient has the app open and poll
 ## Data, privacy, and limitations
 
 - Money is stored as integer paise. The backend computes balances from the opening balance and confirmed ledger events; loan principal is tracked separately from group cash.
-- Voice drafts are proposals, and confirmation is explicit. Corrections add a new adjustment linked to its source entry; history is not silently edited.
+- Voice drafts are proposals, and confirmation is explicit. Corrections add a new adjustment linked to its source entry. An erroneous confirmed entry can be marked cancelled with a reason; its original row and audit event remain visible, while cancelled entries are excluded from balances, summaries, and matching.
 - Bank matching is deterministic and reports reference/amount/date reasoning. All bank evidence is simulated.
 - Loan thresholds, quorum, approval percentage, emergency quorum, and weekly expected contribution are editable. The default rules are demo defaults only. A passing group vote does not transfer funds; no wallet transfer is enabled.
 - The audit history uses SHA-256 linked events and can detect many payload/sequence changes. It is tamper-evident, not immutable: a privileged operator able to rewrite the entire SQLite database could also rewrite the chain.

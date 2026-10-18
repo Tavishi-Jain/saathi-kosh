@@ -55,6 +55,9 @@ model TransactionEntry {
   source              String          @default("manual")
   actor               String          @default("Treasurer")
   confirmationStatus  String          @default("confirmed")
+  cancelledAt         DateTime?
+  cancelledBy         String?
+  cancellationReason  String?
   bankReference       String?
   correctionOfId      String?
   correctionOf        TransactionEntry? @relation("Corrections", fields: [correctionOfId], references: [id])

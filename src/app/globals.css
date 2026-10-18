@@ -142,6 +142,12 @@ h1 { margin: 0; color: #213d32; font-family: var(--serif); font-size: clamp(24px
 .money-cell { font-weight: 650; }
 .money-in { color: #568368 !important; }
 .money-out { color: #ab7667 !important; }
+.transaction-cancelled .member-cell { border-left: 3px solid #b94f43; padding-left: 7px; }
+.transaction-cancelled .money-cell { color: #a45a52 !important; text-decoration: line-through; }
+.status-cancelled { background: #f9e8e5; color: #a94338; }
+.transaction-cancel-button { border: 1px solid #efd3ce; border-radius: 7px; background: #fff; padding: 6px 8px; color: #a94338; font-size: 9px; font-weight: 600; cursor: pointer; }
+.transaction-cancel-button:hover { background: #fcf1ef; }
+.transaction-cancel-button:disabled { cursor: not-allowed; opacity: .55; }
 .bank-pending, .bank-confirmed { display: inline-flex; align-items: center; gap: 4px; font-size: 8px; }
 .bank-pending { color: #b0834b; }
 .bank-pending > span { width: 5px; height: 5px; border-radius: 50%; background: #d2a25a; }

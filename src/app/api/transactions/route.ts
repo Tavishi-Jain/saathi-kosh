@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { actorFrom, errorResponse, readJson } from "@/lib/http";
 import { confirmTransactionsSchema } from "@/lib/domain";
 import { createConfirmedTransactions } from "@/lib/ledger";
+import { calculateBalance } from "@/lib/domain";
 
 export const runtime = "nodejs";
 
@@ -24,11 +25,7 @@ export async function GET(request: Request) {
     });
     const settings = await prisma.groupSettings.findUniqueOrThrow({ where: { id: "group" } });
     const all = await prisma.transactionEntry.findMany();
-    const balancePaise = settings.openingBalancePaise + all.reduce((sum, entry) => {
-      const cashIn = entry.type === "DEPOSIT" || entry.type === "LOAN_REPAYMENT" ||
-        (entry.type === "ADJUSTMENT" && entry.adjustmentDirection === "IN");
-      return sum + (cashIn ? entry.amountPaise : -entry.amountPaise);
-    }, 0);
+    const balancePaise = calculateBalance(settings.openingBalancePaise, all);
     return NextResponse.json({ transactions, balancePaise, openingBalancePaise: settings.openingBalancePaise });
   } catch (error) {
     return errorResponse(error);

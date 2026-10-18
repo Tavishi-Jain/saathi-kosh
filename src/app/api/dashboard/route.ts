@@ -20,8 +20,9 @@ export async function GET() {
     weekStart.setDate(now.getDate() - now.getDay());
     weekStart.setHours(0, 0, 0, 0);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const thisWeek = transactions.filter((entry) => entry.occurredAt >= weekStart);
-    const thisMonth = transactions.filter((entry) => entry.occurredAt >= monthStart);
+    const activeTransactions = transactions.filter((entry) => !entry.cancelledAt);
+    const thisWeek = activeTransactions.filter((entry) => entry.occurredAt >= weekStart);
+    const thisMonth = activeTransactions.filter((entry) => entry.occurredAt >= monthStart);
     const total = calculateBalance(settings.openingBalancePaise, transactions);
     const weekly = {
       depositsPaise: thisWeek.filter((entry) => entry.type === "DEPOSIT").reduce((sum, entry) => sum + entry.amountPaise, 0),
@@ -31,7 +32,7 @@ export async function GET() {
       closingPaise: total,
     };
     const loanBalances = new Map<string, number>();
-    transactions.forEach((entry) => {
+    activeTransactions.forEach((entry) => {
       const balance = loanBalances.get(entry.memberId) ?? 0;
       if (entry.type === "LOAN_DISBURSEMENT") loanBalances.set(entry.memberId, balance + entry.amountPaise);
       if (entry.type === "LOAN_REPAYMENT") loanBalances.set(entry.memberId, balance - entry.amountPaise);

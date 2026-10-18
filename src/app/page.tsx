@@ -123,6 +123,10 @@ const englishCopy: Record<string, string> = {
   " + बचत जमा + ऋण किस्तें − निकासी − दिए गए ऋण। सुधार भी अलग से दर्ज होते हैं।": " + savings deposits + loan repayments − withdrawals − loans disbursed. Corrections are recorded separately.",
   "सभी प्रविष्टियाँ ": "All entries ",
   "बही में बदलाव का इतिहास मिटाया नहीं जाता।": "Ledger changes are never silently erased.",
+  "कार्रवाई": "Action",
+  "रद्द": "Cancelled",
+  "रद्द करने का कारण": "Cancellation reason",
+  "प्रविष्टि रद्द करें": "Cancel entry",
   "नई प्रविष्टि": "New entry",
   "सभी सदस्य": "All members",
   "लेन-देन": "Transaction",
@@ -488,6 +492,9 @@ type Transaction = {
   description: string;
   source: string;
   actor?: string;
+  cancelledAt?: string | null;
+  cancelledBy?: string | null;
+  cancellationReason?: string | null;
   bankReference?: string | null;
   correctionOfId?: string | null;
   adjustmentDirection?: "IN" | "OUT" | null;
@@ -919,6 +926,24 @@ export default function HomePage() {
     setMessage("नई प्रविष्टि बही में जुड़ गई है।");
     await refresh();
   }
+  async function cancelTransaction(entry: Transaction) {
+    if (entry.cancelledAt) return;
+    const reason = window.prompt(language === "en"
+      ? "Why should this entry be cancelled? The original record will be kept."
+      : "यह प्रविष्टि रद्द करने का कारण बताएं। मूल रिकॉर्ड सुरक्षित रहेगा।");
+    if (reason === null) return;
+    await runAction(async () => {
+      await api(`/api/transactions/${entry.id}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-demo-actor": activeActor },
+        body: JSON.stringify({ reason }),
+      });
+      setMessage(language === "en"
+        ? "Entry marked as cancelled. The original record remains in the ledger."
+        : "प्रविष्टि रद्द के रूप में चिह्नित हुई। मूल रिकॉर्ड बही में सुरक्षित है।");
+      await refresh();
+    });
+  }
   async function submitQuery() {
     await runAction(async () => {
       const result = await api<{ answer: string }>("/api/voice/query", {
@@ -1103,7 +1128,7 @@ export default function HomePage() {
                     <label><span>तक</span><input type="date" value={ledgerTo} onChange={(event) => setLedgerTo(event.target.value)} /></label>
                     <label><span>बैंक मिलान</span><select value={ledgerBankFilter} onChange={(event) => setLedgerBankFilter(event.target.value)}><option value="ALL">सभी</option><option value="UNMATCHED">मिलान बाकी</option><option value="MATCHED">मिलान हुआ</option></select></label>
                   </div>
-                  <TransactionTable transactions={filteredLedger} unmatchedIds={unmatchedIds} />
+                  <TransactionTable transactions={filteredLedger} unmatchedIds={unmatchedIds} onCancel={cancelTransaction} />
                 </div>
                 <div className="panel manual-panel" id="manual-form"><div className="panel-heading"><div><h2>हाथ से प्रविष्टि जोड़ें</h2><p>सहेजते ही पुष्टि और ऑडिट इतिहास दर्ज होगा।</p></div><span className="manual-icon"><Plus size={18} /></span></div>
                   <div className="manual-grid">
@@ -1181,12 +1206,16 @@ function DashboardView({ data, actor, onSpeak, onNavigate, onReview }: {
   </section></Localized>;
 }
 
-function TransactionTable({ transactions, unmatchedIds }: { transactions: Transaction[]; unmatchedIds: Set<string> }) {
+function TransactionTable({ transactions, unmatchedIds, onCancel }: {
+  transactions: Transaction[];
+  unmatchedIds: Set<string>;
+  onCancel?: (entry: Transaction) => void;
+}) {
   const language = useContext(LanguageContext);
   if (!transactions.length) return <EmptyState text="इस फ़िल्टर में कोई प्रविष्टि नहीं।" />;
-  return <Localized><div className="table-scroll"><table className="transaction-table"><thead><tr><th>सदस्य / विवरण</th><th>प्रकार</th><th>तारीख़</th><th>राशि</th><th>बैंक / स्रोत</th><th>दर्ज किया</th><th>पुष्टि</th></tr></thead><tbody>{transactions.map((entry) => {
+  return <Localized><div className="table-scroll"><table className="transaction-table"><thead><tr><th>सदस्य / विवरण</th><th>प्रकार</th><th>तारीख़</th><th>राशि</th><th>बैंक / स्रोत</th><th>दर्ज किया</th><th>पुष्टि</th>{onCancel && <th>कार्रवाई</th>}</tr></thead><tbody>{transactions.map((entry) => {
     const income = transactionEffect(entry) > 0;
-    return <tr key={entry.id}><td><div className="member-cell" title={`लेन-देन ID: ${entry.id}`}><span className="member-avatar">{entry.member?.name?.slice(0, 1) ?? "स"}</span><span><strong>{entry.member?.name ?? entry.memberName}</strong><small>{entry.description} · #{entry.id.slice(-6)}</small></span></div></td><td><span className={`type-pill type-${typeColors[entry.type]}`}>{typeLabels[entry.type]}</span></td><td className="date-cell">{dateLabel(entry.occurredAt, language)}</td><td className={`money-cell ${income ? "money-in" : "money-out"}`}>{income ? "+" : "−"} {inr(entry.amountPaise)}</td><td>{unmatchedIds.has(entry.id) ? <span className="bank-pending"><span />मिलान बाकी · {entry.source === "voice" ? "आवाज़" : "मैनुअल"}</span> : <span className="bank-confirmed" title={entry.bankReference ? `संदर्भ ${entry.bankReference}` : "बैंक प्रमाण अभी लिंक नहीं"}>{entry.bankReference ? <Check size={13} /> : null}{entry.bankReference ? "बैंक मिला" : entry.source === "voice" ? "आवाज़" : "मैनुअल"}</span>}</td><td>{entry.actor ?? "Treasurer"}</td><td><span className="status-badge status-match">पुष्टि हुई</span></td></tr>;
+    return <tr key={entry.id} className={entry.cancelledAt ? "transaction-cancelled" : ""}><td><div className="member-cell" title={`लेन-देन ID: ${entry.id}`}><span className="member-avatar">{entry.member?.name?.slice(0, 1) ?? "स"}</span><span><strong>{entry.member?.name ?? entry.memberName}</strong><small>{entry.description} · #{entry.id.slice(-6)}{entry.cancelledAt && entry.cancellationReason ? ` · ${entry.cancellationReason}` : ""}</small></span></div></td><td><span className={`type-pill type-${typeColors[entry.type]}`}>{typeLabels[entry.type]}</span></td><td className="date-cell">{dateLabel(entry.occurredAt, language)}</td><td className={`money-cell ${income ? "money-in" : "money-out"}`}>{income ? "+" : "−"} {inr(entry.amountPaise)}</td><td>{entry.cancelledAt ? <span className="status-badge status-cancelled">{language === "en" ? "Cancelled" : "रद्द"}</span> : unmatchedIds.has(entry.id) ? <span className="bank-pending"><span />मिलान बाकी · {entry.source === "voice" ? "आवाज़" : "मैनुअल"}</span> : <span className="bank-confirmed" title={entry.bankReference ? `संदर्भ ${entry.bankReference}` : "बैंक प्रमाण अभी लिंक नहीं"}>{entry.bankReference ? <Check size={13} /> : null}{entry.bankReference ? "बैंक मिला" : entry.source === "voice" ? "आवाज़" : "मैनुअल"}</span>}</td><td>{entry.cancelledAt ? entry.cancelledBy : entry.actor ?? "Treasurer"}</td><td>{entry.cancelledAt ? <span className="status-badge status-cancelled">{language === "en" ? "Cancelled" : "रद्द"}</span> : <span className="status-badge status-match">पुष्टि हुई</span>}</td>{onCancel && <td>{!entry.cancelledAt && <button className="transaction-cancel-button" disabled={!onCancel} onClick={() => onCancel(entry)}>{language === "en" ? "Cancel entry" : "प्रविष्टि रद्द करें"}</button>}</td>}</tr>;
   })}</tbody></table></div></Localized>;
 }
 

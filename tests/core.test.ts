@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { GET as getAudit } from "../src/app/api/audit/route";
 import { GET as getTransactions, POST as confirmEntries } from "../src/app/api/transactions/route";
+import { POST as cancelTransaction } from "../src/app/api/transactions/[id]/cancel/route";
 import { POST as transcribe } from "../src/app/api/voice/transcribe/route";
 import { GET as getReconciliation } from "../src/app/api/reconciliation/route";
 import { POST as castVote } from "../src/app/api/loans/[id]/vote/route";
@@ -124,6 +125,7 @@ describe("Saathi Kosh deterministic business rules", () => {
       { type: "LOAN_REPAYMENT", amountPaise: 100_000 },
       { type: "WITHDRAWAL", amountPaise: 20_000 },
       { type: "LOAN_DISBURSEMENT", amountPaise: 60_000 },
+      { type: "DEPOSIT", amountPaise: 5_000, cancelledAt: new Date() },
     ])).toBe(4_570_000);
   });
 
@@ -195,7 +197,7 @@ describe("Saathi Kosh deterministic business rules", () => {
       body: JSON.stringify({ query }),
     }));
     const weekly = await (await ask("Is hafte kitna jama hua?")).json();
-    expect(weekly.answer).toContain("₹800");
+    expect(weekly.answer).toContain(new Date().getDay() === 0 ? "₹300" : "₹800");
     expect(weekly.answer).not.toContain("₹36,800");
 
     const memberLoan = await (await ask("Meena ka kitna loan baaki hai?")).json();
@@ -384,6 +386,27 @@ describe("Saathi Kosh deterministic business rules", () => {
     expect(await prisma.transactionEntry.count()).toBe(initialCount + 1);
     const afterConfirm = await getTransactions(new Request("http://localhost/api/transactions"));
     expect((await afterConfirm.json()).balancePaise).toBe(3_692_345);
+    const createdEntry = await prisma.transactionEntry.findUniqueOrThrow({ where: { idempotencyKey: "test-confirmation-idempotent-01:0" } });
+    const cancelRequest = (reason: string) => new Request(`http://localhost/api/transactions/${createdEntry.id}/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-demo-actor": "Sunita" },
+      body: JSON.stringify({ reason }),
+    });
+    expect((await cancelTransaction(cancelRequest("  " ), { params: Promise.resolve({ id: createdEntry.id }) })).status).toBe(400);
+    const cancelled = await cancelTransaction(cancelRequest("Duplicate entry"), { params: Promise.resolve({ id: createdEntry.id }) });
+    expect(cancelled.status).toBe(200);
+    expect((await cancelled.json()).transaction).toMatchObject({
+      id: createdEntry.id,
+      cancelledBy: "Sunita",
+      cancellationReason: "Duplicate entry",
+    });
+    const retained = await prisma.transactionEntry.findUnique({ where: { id: createdEntry.id } });
+    expect(retained).toMatchObject({ id: createdEntry.id, amountPaise: 12_345 });
+    expect(retained?.cancelledAt).toBeInstanceOf(Date);
+    const afterCancel = await getTransactions(new Request("http://localhost/api/transactions"));
+    expect((await afterCancel.json()).balancePaise).toBe(3_680_000);
+    const repeatedCancellation = await cancelTransaction(cancelRequest("Duplicate entry"), { params: Promise.resolve({ id: createdEntry.id }) });
+    expect(repeatedCancellation.status).toBe(400);
 
     const proposal = await prisma.loanProposal.findFirstOrThrow();
     expect(proposal.amountPaise).toBe(1_500_000);

@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       prisma.member.findMany(),
       prisma.loanProposal.findMany({ include: { member: true, votes: true }, orderBy: { createdAt: "desc" } }),
     ]);
+    const activeTransactions = transactions.filter((entry) => !entry.cancelledAt);
     let answer: string;
     const asksForDeposits = /deposit|jama|जमा|बचत/.test(text);
     if (asksForDeposits && /last week|previous week|pichhle hafte|pichhle saptah|पिछले हफ़्ते|पिछले सप्ताह|last month|pichhle mahine|पिछले महीने|this month|इस महीने/.test(text)) {
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
         answer: english ? "Which member's loan would you like to check? Please give their name." : "किस सदस्य के ऋण की जानकारी चाहिए? नाम बताएं।",
         needsClarification: true,
       });
-      const outstanding = transactions.filter((entry) => entry.memberId === member.id).reduce((sum, entry) => {
+      const outstanding = activeTransactions.filter((entry) => entry.memberId === member.id).reduce((sum, entry) => {
         if (entry.type === "LOAN_DISBURSEMENT") return sum + entry.amountPaise;
         if (entry.type === "LOAN_REPAYMENT") return sum - entry.amountPaise;
         return sum;
@@ -49,13 +50,13 @@ export async function POST(request: Request) {
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       weekStart.setHours(0, 0, 0, 0);
-      const total = transactions.filter((entry) => entry.type === "DEPOSIT" && entry.occurredAt >= weekStart)
+      const total = activeTransactions.filter((entry) => entry.type === "DEPOSIT" && entry.occurredAt >= weekStart)
         .reduce((sum, entry) => sum + entry.amountPaise, 0);
       answer = english
         ? `${formatINR(total)} in savings was deposited this week.`
         : `इस हफ्ते ${formatINR(total)} की बचत जमा हुई है।`;
     } else if (/bank|match|unmatched|मिल|बैंक/.test(text)) {
-      const result = reconcileEntries(transactions, bank);
+      const result = reconcileEntries(activeTransactions, bank);
       const flagged = [
         ...result.unmatchedBank.map((item) => `${item.bank.description} ${formatINR(item.bank.amountPaise)}`),
         ...result.mismatches.map((item) => `बैंक ${formatINR(item.bank.amountPaise)} और बही ${formatINR(item.ledger.amountPaise)} की राशि/जानकारी जाँचें`),
@@ -74,8 +75,8 @@ export async function POST(request: Request) {
         : english ? "There are no loan proposals yet." : "अभी कोई ऋण प्रस्ताव नहीं है।";
     } else if (/kitna|balance|paisa|बैलेंस|पैसा/.test(text)) {
       answer = english
-        ? `The calculated group balance is ${formatINR(calculateBalance(settings.openingBalancePaise, transactions))}.`
-        : `समूह का गणना किया हुआ बैलेंस ${formatINR(calculateBalance(settings.openingBalancePaise, transactions))} है।`;
+        ? `The calculated group balance is ${formatINR(calculateBalance(settings.openingBalancePaise, activeTransactions))}.`
+        : `समूह का गणना किया हुआ बैलेंस ${formatINR(calculateBalance(settings.openingBalancePaise, activeTransactions))} है।`;
     } else {
       answer = english
         ? "I can answer questions about the balance, this week's deposits, a member's loan, bank matches, or loan proposals."

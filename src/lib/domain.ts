@@ -23,6 +23,10 @@ export const confirmTransactionsSchema = z.object({
   entries: z.array(transactionSchema).min(1).max(20),
 });
 
+export const cancelTransactionSchema = z.object({
+  reason: z.string().trim().min(3).max(240),
+});
+
 export const loanProposalSchema = z.object({
   requestId: z.string().min(8).max(100),
   memberName: z.string().trim().min(1).max(80),
@@ -82,8 +86,12 @@ export function cashEffect(
   }
 }
 
-export function calculateBalance(openingPaise: number, entries: Parameters<typeof cashEffect>[0][]): number {
-  return entries.reduce((balance, entry) => balance + cashEffect(entry), openingPaise);
+export function calculateBalance(
+  openingPaise: number,
+  entries: (Parameters<typeof cashEffect>[0] & { cancelledAt?: Date | string | null })[],
+): number {
+  return entries.reduce((balance, entry) =>
+    balance + ("cancelledAt" in entry && entry.cancelledAt ? 0 : cashEffect(entry)), openingPaise);
 }
 
 export function formatINR(paise: number): string {
@@ -280,6 +288,7 @@ export type LedgerRow = {
   amountPaise: number;
   adjustmentDirection?: string | null;
   bankReference?: string | null;
+  cancelledAt?: Date | string | null;
 };
 
 export type BankRow = {
@@ -297,6 +306,7 @@ function bankDateFor(record: BankRow) {
 }
 
 export function reconcileEntries(ledger: LedgerRow[], bank: BankRow[]) {
+  ledger = ledger.filter((entry) => !entry.cancelledAt);
   const usedLedger = new Set<string>();
   const usedBank = new Set<string>();
   const matches: { bank: BankRow; ledger: LedgerRow; reason: string }[] = [];
