@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  Activity, ArrowDownLeft, ArrowDownToLine, ArrowLeftRight, ArrowUpRight,
+  Activity, ArrowDownLeft, ArrowDownToLine, ArrowLeftRight, ArrowUpRight, Database,
   BadgeCheck, Bell, Check, CheckCheck, ChevronDown, CircleHelp, ClipboardCheck,
   Clock3, FileAudio2, FileCheck2, FileClock, FileText, HandCoins, History,
   Home, IndianRupee, Landmark, LoaderCircle, LockKeyhole, Mic, Mic2,
@@ -9,6 +9,7 @@ import {
   Sparkles, Users, Vote, Wallet, X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
 import {
   Children, Fragment, cloneElement, createContext, isValidElement, useCallback, useContext,
   useEffect, useRef, useState, useSyncExternalStore,
@@ -58,7 +59,7 @@ const englishCopy: Record<string, string> = {
   "पटल फिर से लोड करें": "Refresh dashboard",
   "मोबाइल नेविगेशन": "Mobile navigation",
   "सिम्युलेटेड डेमो डेटा": "SIMULATED DEMO DATA",
-  " — समूह, लेन-देन, बैंक फ़ीड और वॉलेट सभी काल्पनिक हैं। वास्तविक बैंक से जुड़ा नहीं है।": " — Group, transactions, bank feed and wallet are fictional. Not connected to a real bank.",
+  "। समूह, लेन-देन, बैंक फ़ीड और वॉलेट सभी काल्पनिक हैं। वास्तविक बैंक से जुड़ा नहीं है।": ". Group, transactions, bank feed and wallet are fictional. Not connected to a real bank.",
   "डेमो": "Demo",
   "भाषा / Language": "Language",
   "भाषा बदलें / Change language": "Change language",
@@ -164,7 +165,7 @@ const englishCopy: Record<string, string> = {
   "संभावित दोहराव": "Possible duplicates",
   "समीक्षा की ज़रूरत": "Needs review",
   "मिले हुए लेन-देन": "Matched transactions",
-  "सिर्फ बराबर राशि नहीं — संदर्भ और तारीख भी।": "Not just equal amounts — references and dates matter too.",
+  "सिर्फ बराबर राशि नहीं, संदर्भ और तारीख भी।": "Compare references and dates as well as amounts.",
   "ठीक": "Matched",
   "अभी कोई मिलान नहीं मिला।": "No matches yet.",
   "जाँच की ज़रूरत": "Needs review",
@@ -213,8 +214,8 @@ const englishCopy: Record<string, string> = {
   "बही में दर्ज जमा": "Deposits recorded in ledger",
   "दिए गए ऋण − किस्तें": "Loans disbursed − repayments",
   "जाँचने योग्य प्रविष्टियाँ": "Entries to review",
-  "आपके समूह का हाल": "Your group's overview",
-  "बही साफ़ हो तो हर सदस्य को अपना हिसाब समझ आए।": "Clear records help every member understand the group's finances.",
+  "समूह की बचत और ऋण, एक नज़र में": "Group savings and loans, at a glance",
+  "बही में दर्ज जमा, किस्तें और मौजूदा बैलेंस।": "Deposits, repayments and current balance from the ledger.",
   "लेन-देन बोलकर दर्ज करें": "Record a transaction by voice",
   "हाल की बही गतिविधि": "Recent ledger activity",
   "नया लेन-देन और जमा": "Recent transactions and deposits",
@@ -235,7 +236,9 @@ const englishCopy: Record<string, string> = {
   "हर बचत और किस्त का हिसाब समूह के सामने। गलती होने पर पुरानी प्रविष्टि मिटाए बिना सुधार जोड़ें।": "Every deposit and repayment is visible to the group. Correct errors without deleting the original entry.",
   "हिसाब देखें": "View audit history",
   "समूह की बचत, सबकी समझ": "Group savings, understood by everyone",
-  "डेमो — आधिकारिक बैंक रिकॉर्ड का विकल्प नहीं": "Demo — not a replacement for official bank records",
+  "डेमो, आधिकारिक बैंक रिकॉर्ड नहीं": "Demo, not an official bank record",
+  "गोपनीयता सूचना": "Privacy notice",
+  "उपयोग की शर्तें": "Terms of use",
   "सदस्य / विवरण": "Member / description",
   "राशि": "Amount",
   "बैंक / स्रोत": "Bank / source",
@@ -318,7 +321,7 @@ const englishCopy: Record<string, string> = {
   "दूसरा हस्ताक्षर बाकी": "Second signature pending",
   "कोषाध्यक्ष और सह-हस्ताक्षरकर्ता ज़रूरी": "Treasurer and co-signer required",
   "सदस्य अनुमोदन कॉल": "Member approval calls",
-  "फोन कॉल नहीं — यह स्क्रीन पर चलने वाला डेमो है।": "Not a phone call — this is an in-app demo.",
+  "फोन कॉल नहीं, यह स्क्रीन पर चलने वाला डेमो है।": "This is an in-app demo, not a phone call.",
   "सदस्यों को क्रम से कॉल करें": "Call members one by one",
   "कॉल डेमो शुरू करें": "Start call demo",
   "Saathi Kosh का डेमो कॉल": "Saathi Kosh demo call",
@@ -354,7 +357,7 @@ const englishCopy: Record<string, string> = {
   "परिणाम": "Result",
   "सभी उपलब्ध सदस्यों ने जवाब दिया, लेकिन तय कोरम पूरा नहीं हुआ। अनुरोध लंबित है; इसे मंज़ूर या अस्वीकृत नहीं माना गया।": "All available members responded, but quorum was not reached. The request remains pending; it is neither approved nor rejected.",
   "आपातकालीन मंज़ूरी कॉल": "Emergency approval calls",
-  "फोन पर नहीं—यह प्रस्तुति के लिए इन-ऐप क्रमवार कॉल डेमो है।": "Not over the phone—this is an in-app sequential-call demo for presentations.",
+  "फोन पर नहीं, यह प्रस्तुति के लिए इन-ऐप क्रमवार कॉल डेमो है।": "This is an in-app sequential-call demo for presentations, not a phone call.",
   "नतीजे की सूचना फिर सुनें": "Replay decision notification",
   "अभी उत्तर दे रहे हैं:": "Responding as:",
   "डेमो में प्रत्येक सदस्य का चयन आप करते हैं।": "You select each member in this demo.",
@@ -409,7 +412,7 @@ const englishCopy: Record<string, string> = {
   "राशि रुपये में सही भरें।": "Enter a valid amount in rupees.",
   "नई प्रविष्टि बही में जुड़ गई है।": "The new entry was added to the ledger.",
   "समूह के नियम सुरक्षित हो गए हैं।": "The group rules have been saved.",
-  "पुष्टि हो गई — प्रविष्टियाँ बही में सुरक्षित हैं।": "Confirmed — entries are saved in the ledger.",
+  "पुष्टि हो गई। प्रविष्टियाँ बही में सुरक्षित हैं।": "Confirmed. Entries are saved in the ledger.",
   "आपका सवाल सुनकर उसका जवाब बही से निकाला गया।": "Your question was transcribed and answered from the ledger.",
   "लाइव आवाज़ पहचान": "Live speech recognition",
   "सुन रहा है… बोलते रहें": "Listening… keep speaking",
@@ -430,7 +433,7 @@ const englishCopy: Record<string, string> = {
   "ऋण अनुरोध साफ़ नहीं है।": "The loan request is unclear.",
   "मसौदा तैयार:": "Draft ready:",
   "पुष्टि और प्रस्ताव जोड़ने से पहले जाँचें।": "Review before confirming and adding the proposal.",
-  "सत्यापन सही है — सभी कड़ियाँ मिलती हैं।": "Verification passed — all links are valid.",
+  "सत्यापन सही है। सभी कड़ियाँ मिलती हैं।": "Verification passed. All links are valid.",
   "पहली गड़बड़ी घटना #": "First invalid event: #",
   " पर है।": ".",
   "स्वीकृत": "Approved",
@@ -884,7 +887,7 @@ export default function HomePage() {
       setTranscriptInput("");
       setAudioFile(null);
       setUnresolved([]);
-      setMessage("पुष्टि हो गई — प्रविष्टियाँ बही में सुरक्षित हैं।");
+      setMessage("पुष्टि हो गई। प्रविष्टियाँ बही में सुरक्षित हैं।");
       await refresh();
     });
   }
@@ -1067,7 +1070,7 @@ export default function HomePage() {
         </div>
 
         <div className="page-content">
-          <div className="demo-banner"><span className="demo-icon"><Sparkles size={14} /></span><span><strong>सिम्युलेटेड डेमो डेटा</strong><span> — समूह, लेन-देन, बैंक फ़ीड और वॉलेट सभी काल्पनिक हैं। वास्तविक बैंक से जुड़ा नहीं है।</span></span>          <span className="demo-tag">डेमो <CircleHelp size={14} /></span></div>
+          <div className="demo-banner"><span className="demo-icon"><Database size={14} /></span><span><strong>सिम्युलेटेड डेमो डेटा</strong><span>। समूह, लेन-देन, बैंक फ़ीड और वॉलेट सभी काल्पनिक हैं। वास्तविक बैंक से जुड़ा नहीं है।</span></span><span className="demo-tag">डेमो <CircleHelp size={14} /></span></div>
           {error && <div className="alert alert-error" role="alert"><X size={17} />{error}<button onClick={() => setError("")} aria-label="त्रुटि बंद करें"><X size={15} /></button></div>}
           {message && <div className="alert alert-success" role="status"><Check size={17} />{message}<button onClick={() => setMessage("")} aria-label="संदेश बंद करें"><X size={15} /></button></div>}
           {!dashboard && !error ? <div className="loading-card"><LoaderCircle className="spin" /> समूह की बही खुल रही है…</div> : null}
@@ -1147,7 +1150,7 @@ export default function HomePage() {
                 <div className="bank-warning"><Landmark size={18} /><div><strong>SIMULATED BANK DATA · केवल उदाहरण</strong><span>यह काल्पनिक बैंक फ़ीड है। कोई वास्तविक बैंक खाता या स्टेटमेंट नहीं जोड़ा गया।</span></div><button className="button button-dark" disabled={busy} onClick={() => void runAction(async () => { const result = await api<{ imported: number }>("/api/reconciliation/import", { method: "POST" }); setMessage(`${result.imported} नमूना बैंक रिकॉर्ड आयात हुए।`); await refresh(); })}><ArrowDownToLine size={16} />नमूना CSV जोड़ें</button></div>
                 <div className="recon-stats"><StatCard label="मिलान हुए" value={String(bankData?.matches.length ?? 0)} note="संदर्भ सहित" icon={BadgeCheck} tone="green" /><StatCard label="बैंक में अनजान जमा" value={String(bankData?.unmatchedBank.length ?? 0)} note="बही में नहीं मिला" icon={ArrowDownLeft} tone="amber" /><StatCard label="बही में अनमिली" value={String(bankData?.unmatchedLedger.length ?? 0)} note="बैंक प्रमाण बाकी" icon={FileClock} tone="rose" /><StatCard label="राशि अंतर" value={String(bankData?.mismatches.length ?? 0)} note="जाँच की ज़रूरत" icon={ArrowLeftRight} tone="blue" /><StatCard label="संभावित दोहराव" value={String(bankData?.potentialDuplicates.length ?? 0)} note="समीक्षा की ज़रूरत" icon={Activity} tone="violet" /></div>
                 <div className="recon-grid">
-                  <div className="panel"><div className="table-toolbar"><div><h2><CheckCheck size={17} />मिले हुए लेन-देन</h2><p>सिर्फ बराबर राशि नहीं — संदर्भ और तारीख भी।</p></div><span className="status-badge status-match">मिलान हुआ</span></div><div className="match-list">{bankData?.matches.map((item) => { const entry = ledger.find((row) => row.id === item.ledger.id); return <div key={item.bank.id} className="recon-item"><div className="recon-check"><Check size={15} /></div><div><strong>{entry?.member.name ?? "समूह"} · {inr(entry?.amountPaise ?? 0)}</strong><p>{entry?.description}</p><small>{item.reason}</small></div><span className="status-badge status-match">ठीक</span></div>; })}{!bankData?.matches.length && <EmptyState text="अभी कोई मिलान नहीं मिला।" />}</div></div>
+                  <div className="panel"><div className="table-toolbar"><div><h2><CheckCheck size={17} />मिले हुए लेन-देन</h2><p>सिर्फ बराबर राशि नहीं, संदर्भ और तारीख भी।</p></div><span className="status-badge status-match">मिलान हुआ</span></div><div className="match-list">{bankData?.matches.map((item) => { const entry = ledger.find((row) => row.id === item.ledger.id); return <div key={item.bank.id} className="recon-item"><div className="recon-check"><Check size={15} /></div><div><strong>{entry?.member.name ?? "समूह"} · {inr(entry?.amountPaise ?? 0)}</strong><p>{entry?.description}</p><small>{item.reason}</small></div><span className="status-badge status-match">ठीक</span></div>; })}{!bankData?.matches.length && <EmptyState text="अभी कोई मिलान नहीं मिला।" />}</div></div>
                   <div className="panel"><div className="table-toolbar"><div><h2><CircleHelp size={17} />जाँच की ज़रूरत</h2><p>यहाँ दिखी विसंगतियों को हाथ से जाँचें।</p></div><span className="status-badge status-review">ध्यान दें</span></div><div className="match-list">{bankData?.unmatchedBank.map((item) => <div key={item.bank.id} className="recon-item"><div className="recon-alert"><ArrowDownLeft size={15} /></div><div><strong>बैंक में जमा · {inr(item.bank.amountPaise)}</strong><p>{item.bank.description}</p><small>{item.reason}</small></div><span className="status-badge status-review">{item.reason.startsWith("Potential duplicate") ? "संभावित डुप्लिकेट" : "नहीं मिला"}</span></div>)}{bankData?.unmatchedLedger.map((item) => <div key={item.ledger.id} className="recon-item"><div className="recon-alert"><FileText size={15} /></div><div><strong>बही में · {inr(item.ledger.amountPaise)}</strong><p>{item.ledger.description}</p><small>{item.reason}</small></div><span className="status-badge status-review">बैंक बाकी</span></div>)}{bankData?.mismatches.map((item) => <div key={item.bank.id} className="recon-item"><div className="recon-alert"><ArrowLeftRight size={15} /></div><div><strong>राशि अलग</strong><p>{item.reason}</p></div><span className="status-badge status-review">जाँचें</span></div>)}{!bankData?.unmatchedBank.length && !bankData?.unmatchedLedger.length && !bankData?.mismatches.length && <EmptyState text="सभी प्रविष्टियाँ मिल गईं।" />}</div></div>
                 </div>
               </section>}
@@ -1161,7 +1164,7 @@ export default function HomePage() {
               </section>}
               {page === "audit" && <section className="page-section">
                 <div className="page-heading"><div><p className="eyebrow">हर बदलाव का सबूत</p><h1>लेखा इतिहास और भरोसे की जाँच</h1><p className="subheading">SHA-256 से जुड़े रिकॉर्ड। यह tamper-evident है, पूर्ण रूप से immutable या blockchain नहीं।</p></div><span className="page-icon"><ShieldCheck size={23} /></span></div>
-                <div className={`chain-banner ${audit?.verification.valid ? "" : "chain-invalid"}`}><div className="chain-icon">{audit?.verification.valid ? <ShieldCheck size={21} /> : <CircleHelp size={21} />}</div><div><span>ऑडिट चेन सत्यापन</span><strong>{audit?.verification.valid ? "सभी रिकॉर्ड की कड़ी सही है" : `रिकॉर्ड ${audit?.verification.firstInvalidSequence} के बाद कड़ी टूटी है`}</strong><small>{audit?.verification.checked ?? 0} घटनाएँ जाँचीं · SHA-256 linked events</small></div><button className="button button-outline" disabled={busy} onClick={() => void runAction(async () => { const result = await api<{ verification: NonNullable<typeof audit>["verification"] }>("/api/audit", { method: "POST" }); if (audit) setAudit({ ...audit, verification: result.verification }); setMessage(result.verification.valid ? "सत्यापन सही है — सभी कड़ियाँ मिलती हैं।" : `पहली गड़बड़ी घटना #${result.verification.firstInvalidSequence} पर है।`); })}><RefreshCw size={15} />फिर जाँचें</button></div>
+                <div className={`chain-banner ${audit?.verification.valid ? "" : "chain-invalid"}`}><div className="chain-icon">{audit?.verification.valid ? <ShieldCheck size={21} /> : <CircleHelp size={21} />}</div><div><span>ऑडिट चेन सत्यापन</span><strong>{audit?.verification.valid ? "सभी रिकॉर्ड की कड़ी सही है" : `रिकॉर्ड ${audit?.verification.firstInvalidSequence} के बाद कड़ी टूटी है`}</strong><small>{audit?.verification.checked ?? 0} घटनाएँ जाँचीं · SHA-256 linked events</small></div><button className="button button-outline" disabled={busy} onClick={() => void runAction(async () => { const result = await api<{ verification: NonNullable<typeof audit>["verification"] }>("/api/audit", { method: "POST" }); if (audit) setAudit({ ...audit, verification: result.verification }); setMessage(result.verification.valid ? "सत्यापन सही है। सभी कड़ियाँ मिलती हैं।" : `पहली गड़बड़ी घटना #${result.verification.firstInvalidSequence} पर है।`); })}><RefreshCw size={15} />फिर जाँचें</button></div>
                 <div className="panel audit-panel"><div className="table-toolbar"><div><h2>हाल की घटनाएँ</h2><p>नया लेन-देन, वोट या नियम बदलने पर इतिहास जुड़ता है।</p></div><span className="count-pill">{audit?.events.length ?? 0} घटनाएँ</span></div><div className="audit-list">{audit?.events.map((event) => <div className="audit-row" key={event.id}><div className="audit-icon"><History size={16} /></div><div className="audit-main"><strong>{event.eventType.replaceAll("_", " ")}</strong><p>{event.actor} · {event.entityRef}</p><small>{event.payload}</small><code>{event.eventHash.slice(0, 24)}…</code></div><time>{new Date(event.occurredAt).toLocaleString(language === "en" ? "en-IN" : "hi-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></div>)}</div><p className="audit-caveat"><LockKeyhole size={14} />सिस्टम के बाहर अधिकार रखने वाला व्यक्ति पूरा SQLite डेटाबेस फिर से लिख सकता है। यह रिकॉर्ड में बदलाव पकड़ने में मदद करता है, पूर्ण सुरक्षा की गारंटी नहीं।</p></div>
               </section>}
               {page === "settings" && settingsDraft && <section className="page-section">
@@ -1172,7 +1175,7 @@ export default function HomePage() {
             </>
           )}
           <CallCenter members={dashboard?.members ?? []} actor={activeActor} language={language} showDirectory={page === "home" && Boolean(dashboard)} onActorChange={setActiveActor} onCallActivityChange={setCallInProgress} />
-          <footer className="page-footer"><span>साथी कोष <b>·</b> समूह की बचत, सबकी समझ</span><span>डेमो — आधिकारिक बैंक रिकॉर्ड का विकल्प नहीं</span></footer>
+          <footer className="page-footer"><span>साथी कोष <b>·</b> समूह की बचत, सबकी समझ</span><span>डेमो, आधिकारिक बैंक रिकॉर्ड नहीं</span><nav aria-label="कानूनी जानकारी"><Link href="/privacy">{language === "en" ? "Privacy notice" : "गोपनीयता सूचना"}</Link><Link href="/terms">{language === "en" ? "Terms of use" : "उपयोग की शर्तें"}</Link></nav></footer>
         </div>
       </section>
     </main>
@@ -1190,7 +1193,7 @@ function DashboardView({ data, actor, onSpeak, onNavigate, onReview }: {
 }) {
   const language = useContext(LanguageContext);
   return <Localized><section className="page-section">
-    <div className="welcome-row"><div><p className="eyebrow">{language === "en" ? "Today" : "आज"} · {new Intl.DateTimeFormat(language === "en" ? "en-IN" : "hi-IN", { weekday: "long", day: "numeric", month: "long" }).format(new Date(data.currentDateIso))} · {language === "en" ? "Hello" : "नमस्ते"} {actor}</p><h1>आपके समूह का हाल <span>🌿</span></h1><p className="subheading">बही साफ़ हो तो हर सदस्य को अपना हिसाब समझ आए।</p></div><button className="button button-primary speak-cta" onClick={() => onNavigate("voice")}><Mic2 size={17} />लेन-देन बोलकर दर्ज करें</button></div>
+    <div className="welcome-row"><div><p className="eyebrow">{language === "en" ? "Today" : "आज"} · {new Intl.DateTimeFormat(language === "en" ? "en-IN" : "hi-IN", { weekday: "long", day: "numeric", month: "long" }).format(new Date(data.currentDateIso))} · {language === "en" ? "Hello" : "नमस्ते"} {actor}</p><h1>समूह की बचत और ऋण, एक नज़र में</h1><p className="subheading">बही में दर्ज जमा, किस्तें और मौजूदा बैलेंस।</p></div><button className="button button-primary speak-cta" onClick={() => onNavigate("voice")}><Mic2 size={17} />लेन-देन बोलकर दर्ज करें</button></div>
     <div className="stats-grid">
       <StatCard label="समूह का बैलेंस" value={inr(data.balancePaise)} note="गणना · आज तक" icon={Wallet} tone="green" />
       <StatCard label="इस महीने की बचत" value={inr(data.depositsThisMonthPaise)} note="बही में दर्ज जमा" icon={ArrowDownLeft} tone="blue" />
@@ -1487,8 +1490,8 @@ function LoanView({ loans, members, actor, settings, busy, onAction, onRefresh, 
         if (voteRecognitionRetries.current < 2) {
           voteRecognitionRetries.current += 1;
           setVoteSpeechMessage(voteSpeechTranscriptRef.current
-            ? "जवाब साफ़ नहीं मिला—एक बार फिर बोलें।"
-            : "आवाज़ नहीं सुनाई दी—एक बार फिर बोलें।");
+            ? "जवाब साफ़ नहीं मिला। एक बार फिर बोलें।"
+            : "आवाज़ नहीं सुनाई दी। एक बार फिर बोलें।");
           voteRecognitionRetryTimer.current = window.setTimeout(() => startVoteSpeech(loan, true), 450);
         } else {
           autoVoteListening.current = false;
@@ -1599,7 +1602,7 @@ function LoanView({ loans, members, actor, settings, busy, onAction, onRefresh, 
           {loan.amountPaise > settings.approvalLimitPaise ? <>
             <div className="vote-progress"><div><span>{loan.decision.cast} वोट पड़े</span><strong>{loan.decision.cast}/{loan.decision.quorum} कोरम</strong></div><div className="progress-track"><span style={{ width: `${Math.min(100, loan.decision.cast / loan.decision.quorum * 100)}%` }} /></div><div className="vote-counts"><span>हाँ <strong>{loan.decision.yes}</strong></span><span>ना <strong>{loan.decision.no}</strong></span><span>{settings.approvalPercent}% मंज़ूरी ज़रूरी</span></div></div>
             {loan.status === "PENDING" && <div className="vote-actions"><label>वोट देने वाला<select value={selectedVoter} onChange={(event) => setSelectedVoter(event.target.value)}>{members.filter((member) => member.name !== loan.memberName && !loan.votes.some((vote) => (vote.memberName ?? vote.member?.name) === member.name)).map((member) => <option key={member.id}>{member.name}</option>)}</select></label><button className="button button-yes" disabled={busy || !selectedVoter || selectedVoter === loan.memberName} onClick={() => void onAction(() => cast(loan, "YES"))}><Check size={15} />हाँ</button><button className="button button-no" disabled={busy || !selectedVoter || selectedVoter === loan.memberName} onClick={() => void onAction(() => cast(loan, "NO"))}><X size={15} />ना</button></div>}
-            {loan.status === "PENDING" && loan.emergency && <div className="sim-call-launch"><div><strong><PhoneCall size={15} />आपातकालीन मंज़ूरी कॉल</strong><span>फोन पर नहीं—यह प्रस्तुति के लिए इन-ऐप क्रमवार कॉल डेमो है।</span></div><button className="button button-outline" disabled={busy || !!callSequence} onClick={() => startCallSequence(loan)}><PhoneCall size={15} />कॉल डेमो शुरू करें</button></div>}
+            {loan.status === "PENDING" && loan.emergency && <div className="sim-call-launch"><div><strong><PhoneCall size={15} />आपातकालीन मंज़ूरी कॉल</strong><span>फोन पर नहीं, यह प्रस्तुति के लिए इन-ऐप क्रमवार कॉल डेमो है।</span></div><button className="button button-outline" disabled={busy || !!callSequence} onClick={() => startCallSequence(loan)}><PhoneCall size={15} />कॉल डेमो शुरू करें</button></div>}
           </> : <><div className="approval-list">{loan.approvals?.map((approval) => <span key={approval.member.id}><Check size={13} />{approval.member.name}</span>)}<span className="approval-wait">{loan.approvals?.length ? "दूसरा हस्ताक्षर बाकी" : "कोषाध्यक्ष और सह-हस्ताक्षरकर्ता ज़रूरी"}</span></div>{loan.status === "PENDING" && <button className="button button-outline button-wide" disabled={busy} onClick={() => void onAction(() => approve(loan))}><BadgeCheck size={16} />{actor} से अधिकृत मंज़ूरी</button>}</>}
           {activeSequence && <div className="sim-call-overlay" role="dialog" aria-modal="true" aria-labelledby="sim-call-title">
             <div className="sim-call-card">

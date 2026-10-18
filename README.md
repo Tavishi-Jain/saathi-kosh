@@ -33,6 +33,12 @@ npm run dev
 
 Open <http://localhost:3000>. The seed command **resets** the demo tables and creates 12 fictional members, a ₹45,000 opening balance, sample deposits and repayments, simulated bank rows, and a pending ₹15,000 loan proposal. Re-run `npm run db:seed` to restore the sample dataset. For production mode, run `npm run build` followed by `npm start`.
 
+## Privacy, terms, and domain
+
+The app includes bilingual [privacy notice](src/app/privacy/page.tsx) and [terms of use](src/app/terms/page.tsx) pages. They describe the prototype's simulated data, identity, audio-provider, and storage limitations. Have these reviewed and adapted before any real-world launch.
+
+Set `APP_URL` to the app's canonical origin in `.env` (for example, `https://your-domain.example`) when deploying; it is used to generate canonical metadata. This repository does not have a deployment or custom domain configured. Connecting a real domain also requires a domain you control, a hosting provider, and its DNS/TLS setup. SQLite needs persistent storage on the host; do not deploy this prototype to an ephemeral filesystem and expect its demo records to persist.
+
 ## Demo workflows
 
 ### Voice-assisted ledger entry
